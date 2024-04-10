@@ -2,7 +2,7 @@ package lore.optics
 
 import monocle.{Traversal}
 import cats.implicits._
-import lore.AST._
+import lore.ast._
 import cats.Applicative
 import monocle.Lens
 import monocle.Fold
@@ -81,11 +81,12 @@ val sourcePosLens = Lens[Term, Option[SourcePos]](_.sourcePos)(s => {
   case t @ TFunC(name, args, sourcePos)             => t.copy(sourcePos = s)
 })
 
-trait HasChildren[A]:
+trait HasChildren[A] {
   extension (a: A) def children: List[Term]
-given HasChildren[Term] with
-  extension (t: Term)
-    def children: List[Term] = t match
+}
+given HasChildren[Term] with {
+  extension (t: Term) {
+    def children: List[Term] = t match {
       case TViperImport(path, sourcePos)      => List.empty
       case TArgT(name, _type, sourcePos)      => List.empty
       case TVar(name, sourcePos)              => List.empty
@@ -124,6 +125,9 @@ given HasChildren[Term] with
       case TFCall(parent, field, args, sourcePos)  => List(parent) ++ args
       case TFCurly(parent, field, body, sourcePos) => List(parent) :+ body
       case TFunC(name, args, sourcePos)            => args.toList
+    }
+  }
+}
 
 // allows to focus all terms in a certain subtree. Not sure how useful this is and it is much slower than traverseFromNode
 val Subtree: Traversal[Term, Term] =
@@ -145,7 +149,7 @@ val children: Fold[Term, Term] =
   new Fold[Term, Term] {
 
     def foldMap[M: Monoid](f: Term => M)(t: Term): M =
-      t match
+      t match {
         case _: (TViperImport | TArgT | TVar | TTypeAl | TNum | TTrue | TFalse |
               TString) =>
           Monoid[M].empty
@@ -189,6 +193,7 @@ val children: Fold[Term, Term] =
           Monoid[M].combineAll((List(parent) :+ body).map(f))
         case TFunC(name, args, sourcePos) =>
           Monoid[M].combineAll(args.toList.map(f))
+      }
   }
 
 //   new Traversal[Term, Term] {
@@ -275,7 +280,7 @@ val children: Fold[Term, Term] =
 //         // case t: TForall(vars, triggers, body, sourcePos) =>
 //         // case t: TExists(vars, body, sourcePos)           =>
 //         // case t: TParens(inner, sourcePos)                =>
-//         // case t: TString(value, sourcePos)                =>
+//         // case t: TString(arg, sourcePos)                =>
 //         // case t: TFCall(parent, field, args, sourcePos)   =>
 //         // case t: TFCurly(parent, field, body, sourcePos)  =>
 //         // case t: TFunC(name, args, sourcePos)             =>

@@ -1,11 +1,11 @@
 package lore
 import cats.implicits._
-import lore.AST._
+import lore.ast._
 import lore.test.util.ParserSuite
 import java.nio.file.Path
 import cats.data.NonEmptyList
 
-class SimpleParsing extends ParserSuite:
+class SimpleParsing extends ParserSuite {
   test("function call") {
     assertParsingResult(
       Parser.term,
@@ -358,13 +358,14 @@ class SimpleParsing extends ParserSuite:
     val multilineString =
       """|// this is a comment
          |lalala""".stripMargin
-    Parser.comment.parse(multilineString) match
+    Parser.comment.parse(multilineString) match {
       case Left(error) => fail(error.show)
       case Right(ast) =>
         assertEquals(
           ast,
           ("\nlalala", ())
         )
+    }
   }
 
   test("Viper import") {
@@ -375,3 +376,4 @@ class SimpleParsing extends ParserSuite:
       TViperImport(Path.of(path))
     )
   }
+}

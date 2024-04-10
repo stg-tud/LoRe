@@ -1,5 +1,5 @@
 package lore
-import lore.AST._
+import lore.ast._
 import cats.parse.Parser.Expectation
 import cats.data.NonEmptyList
 import lore.test.util.ParserSuite
@@ -220,9 +220,10 @@ class BooleanExpressionParsing extends ParserSuite {
     )
 
     // this should fail
-    p.parseAll("false != (true ==> false") match
+    p.parseAll("false != (true ==> false") match {
       case Left(e: cats.parse.Parser.Error) => ()
       case _                                => fail("This should fail!")
+    }
   }
 
   test("number comparison") {

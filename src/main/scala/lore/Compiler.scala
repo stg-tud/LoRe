@@ -6,30 +6,27 @@ import java.nio.file.{Files, Path, Paths}
 import com.monovore.decline._
 import cats.implicits._
 import cats.data.NonEmptyList
-import lore.AST.Term
+import lore.ast.Term
 import java.nio.file.NoSuchFileException
 import lore.Parser.ParsingException
 import lore.backends.ViperBackend
 import lore.cli._
 
-object Compiler extends IOApp:
+object Compiler extends IOApp {
 
-  def readFile(path: Path): IO[String] =
+  private def readFile(path: Path): IO[String] =
     IO.blocking(String(Files.readAllBytes(path), StandardCharsets.UTF_8))
 
-  def writeFile(path: Path, content: String): IO[Unit] =
-    for
-      // create parent directories
-      _ <- IO.blocking(Files.createDirectories(path.getParent)).attempt
-      _ <- IO.blocking(
-        Files.write(path, content.getBytes(StandardCharsets.UTF_8))
-      )
-    yield ()
+  private def writeFile(path: Path, content: String): IO[Unit] = for {
+    // create parent directories
+    _ <- IO.blocking(Files.createDirectories(path.getParent)).attempt
+    _ <- IO.blocking(
+      Files.write(path, content.getBytes(StandardCharsets.UTF_8))
+    )
+  }
+  yield ()
 
-  // def interprete(ast: Seq[AST.ParsedExpression]): IO[Unit] =
-  //   IO.blocking(Interpreter.interprete(ast))
-
-  def toScala(ast: NonEmptyList[AST.Term], options: Options): IO[Unit] =
+  def toScala(ast: NonEmptyList[Term], options: Options): IO[Unit] = {
     ???
     // for
     //   result <- IO(ScalaBackend.toAmm(ast))
@@ -37,11 +34,12 @@ object Compiler extends IOApp:
     //     case None       => IO.println(result)
     //     case Some(path) => writeFile(path, result)
     // yield result
+  }
 
-  def toViper(ast: NonEmptyList[AST.Term], options: Options): IO[Unit] =
+  def toViper(ast: NonEmptyList[Term], options: Options): IO[Unit] = {
     ViperBackend.compileAsSingleFile(ast.toList)
-    options.outputOptions match
-      case SplitMode(outDir) =>
+    options.outputOptions match {
+      case OutputOptions.SplitMode(outDir) =>
         ViperBackend
           .compileAsSeparateFiles(ast.toList)
           .map((filename, program) =>
@@ -51,14 +49,17 @@ object Compiler extends IOApp:
           .as(())
       case _ =>
         val result = ViperBackend.compileAsSingleFile(ast.toList)
-        options.toFile match
-          case None       => IO.println(result)
+        options.toFile match {
+          case None => IO.println(result)
           case Some(path) => writeFile(path, result)
+        }
+    }
+  }
 
-  def run(args: List[String]): IO[ExitCode] =
+  def run(args: List[String]): IO[ExitCode] = {
     // parse arguments and combine requested actions
-    val subcommand: Subcommand = mainCommand.parse(args) match
-      case h @ Left(Help(errors, _, _, _)) =>
+    val subcommand: Subcommand = mainCommand.parse(args) match {
+      case h@Left(Help(errors, _, _, _)) =>
         if errors.isEmpty
         then
           return IO.println(h.value).as(ExitCode.Success) // --help flag given
@@ -68,35 +69,40 @@ object Compiler extends IOApp:
             .as(ExitCode.Error) // parsing subcommands error
       case Right(s) =>
         s
+    }
     val options = subcommand.options
 
-    val result = for
+    val result = for {
       // read program
       program <-
         if options.file.isDefined
         then (readFile(options.file.get))
         else IO((options.inline.get))
       // parse program
-      ast <- Parser.parse(program) match
+      ast <- Parser.parse(program) match {
         case Left(e) =>
           IO.raiseError(Parser.ParsingException(e.show))
-        case Right(a) => IO(a)
+        case Right(a) => IO.pure(a)
+      }
       // perform requested subcommand
       result <-
-        subcommand match
-          case ToRescala(_) => toScala(ast, options)
-          case ToViper(_)   => toViper(ast, options)
-          case Parse(_)     =>
+        subcommand match {
+          case ToREScala(_) => toScala(ast, options)
+          case ToViper(_) => toViper(ast, options)
+          case Parse(_) =>
             // we already parsed, simply produce output
-            options.toFile.match
-              case None       => IO.println(ast.toString)
+            options.toFile.match {
+              case None => IO.println(ast.toString)
               case Some(path) => writeFile(path, ast.toString)
+            }
+        }
+    }
     yield result
 
     // check if anything went wrong: print error messages and set return code
-    for
+    for {
       resultWithErrors <- result.attempt
-      exitCode <- resultWithErrors match
+      exitCode <- resultWithErrors match {
         case Left(e: NoSuchFileException) =>
           IO.println(
             fansi.Color
@@ -117,4 +123,8 @@ object Compiler extends IOApp:
           ) >> IO(e.printStackTrace())
             .as(ExitCode.Error)
         case Right(io) => IO(io).as(ExitCode.Success)
+      }
+    }
     yield exitCode
+  }
+}
