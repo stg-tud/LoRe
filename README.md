@@ -1,7 +1,13 @@
+# Important Notice
+
+> [!IMPORTANT]
+> LoRe development moved to the [REScala monorepo](https://github.com/rescala-lang/REScala/tree/master/Modules/Lore) which combines all projects related to distributed systems programming done at STG at TU Darmstadt.
+> For now, this repository will stay as is and the old readme is kept below.
+
 # LoRe
 > Local-first reactive programming with verified safety guarantees 🌈
 
-This repository contains our prototype implementation of the LoRe language compiler as described [in this paper](https://doi.org/10.4230/LIPIcs.ECOOP.2023.12).
+This repository contains our prototype implementation of the LoRe language compiler as described [in this paper](https://doi.org/10.1145/3633769).
 
 
 # Artifact Getting Started Guide
