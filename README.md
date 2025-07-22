@@ -1,7 +1,7 @@
 # Important Notice
 
 > [!IMPORTANT]
-> LoRe development moved to the [REScala monorepo](https://github.com/rescala-lang/REScala/tree/master/Modules/Lore) which combines all projects related to distributed systems programming done at STG at TU Darmstadt.
+> LoRe development moved to the [Bismuth monorepo](https://github.com/stg-tud/Bismuth/tree/main/Modules/Lore) which combines all projects related to distributed systems programming done at STG at TU Darmstadt.
 > For now, this repository will stay as is and the old readme is kept below.
 
 # LoRe
